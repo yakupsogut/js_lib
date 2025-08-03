@@ -73,18 +73,9 @@ export default {
   computed: {
     displayTitle() {
       return this.title || 'Güzel Form Modal';
-    },
-    priorityColor() {
-      const priority = this.priorities.find(p => p.value === this.formData.priority);
-      return priority ? priority.color : '#6b7280';
-    },
-    statusColor() {
-      const status = this.statuses.find(s => s.value === this.formData.status);
-      return status ? status.color : '#6b7280';
     }
   },
   mounted() {
-    // Form verilerini item'dan yükle
     if (this.item) {
       this.formData = {
         name: this.item.name || '',
@@ -121,39 +112,27 @@ export default {
           this.errors.email = 'Geçerli bir e-posta adresi giriniz';
         }
         
-        if (this.formData.phone && !this.isValidPhone(this.formData.phone)) {
-          this.errors.phone = 'Geçerli bir telefon numarası giriniz';
-        }
-        
         if (!this.formData.category) {
           this.errors.category = 'Kategori seçimi zorunludur';
         }
         
-        if (this.formData.description.length > 500) {
-          this.errors.description = 'Açıklama 500 karakterden uzun olamaz';
-        }
-        
-        // Hata varsa durdur
         if (Object.keys(this.errors).length > 0) {
           return;
         }
         
-        // API çağrısı simülasyonu
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-        // Başarılı kaydetme
         this.$emit('action', 'saved', {
           id: this.itemId,
           data: this.formData,
           timestamp: new Date().toISOString()
         });
         
-        this.showSuccessMessage('Form başarıyla kaydedildi!');
+        console.log('✅ Form başarıyla kaydedildi!');
         
       } catch (error) {
-        console.error('Kaydetme hatası:', error);
+        console.error('❌ Kaydetme hatası:', error);
         this.$emit('action', 'error', error);
-        this.showErrorMessage('Kaydetme sırasında hata oluştu!');
       } finally {
         this.loading = false;
       }
@@ -168,11 +147,6 @@ export default {
       return emailRegex.test(email);
     },
     
-    isValidPhone(phone) {
-      const phoneRegex = /^[\+]?[0-9\s\-\(\)]{10,}$/;
-      return phoneRegex.test(phone);
-    },
-    
     toggleTag(tag) {
       const index = this.formData.tags.indexOf(tag);
       if (index > -1) {
@@ -180,23 +154,6 @@ export default {
       } else {
         this.formData.tags.push(tag);
       }
-    },
-    
-    togglePreference(pref) {
-      const index = this.formData.preferences.indexOf(pref);
-      if (index > -1) {
-        this.formData.preferences.splice(index, 1);
-      } else {
-        this.formData.preferences.push(pref);
-      }
-    },
-    
-    showSuccessMessage(message) {
-      console.log('✅ ' + message);
-    },
-    
-    showErrorMessage(message) {
-      console.error('❌ ' + message);
     }
   },
   template: `
@@ -268,10 +225,8 @@ export default {
                 v-model="formData.phone"
                 type="tel" 
                 class="form-input"
-                :class="{ 'error': errors.phone }"
                 placeholder="+90 555 123 4567"
               />
-              <div v-if="errors.phone" class="error-message">{{ errors.phone }}</div>
             </div>
             
             <div class="form-group">
@@ -343,12 +298,10 @@ export default {
             <textarea 
               v-model="formData.description"
               class="form-textarea"
-              :class="{ 'error': errors.description }"
               placeholder="Detaylı açıklama giriniz..."
               rows="4"
             ></textarea>
             <div class="char-count">{{ formData.description.length }}/500</div>
-            <div v-if="errors.description" class="error-message">{{ errors.description }}</div>
           </div>
 
           <!-- Row 5: Tags -->
@@ -409,30 +362,6 @@ export default {
             </div>
           </div>
 
-          <!-- Row 7: Preferences -->
-          <div class="form-group full-width">
-            <label class="form-label">
-              <span class="label-icon">⚙️</span>
-              Tercihler
-            </label>
-            <div class="checkbox-group">
-              <label 
-                v-for="pref in preferenceOptions" 
-                :key="pref.value"
-                class="checkbox-item"
-              >
-                <input 
-                  type="checkbox" 
-                  :value="pref.value"
-                  v-model="formData.preferences"
-                  class="checkbox-input"
-                />
-                <span class="checkbox-custom"></span>
-                <span class="checkbox-label">{{ pref.label }}</span>
-              </label>
-            </div>
-          </div>
-
           <!-- Form Actions -->
           <div class="form-actions">
             <button type="submit" :disabled="loading" class="submit-btn">
@@ -445,6 +374,397 @@ export default {
           </div>
         </form>
       </div>
+
+      <style>
+        /* Modal Container */
+        .beautiful-form-modal {
+          background: #ffffff;
+          border-radius: 16px;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+          max-width: 800px;
+          width: 100%;
+          max-height: 90vh;
+          overflow-y: auto;
+          position: relative;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* Theme Colors */
+        .theme-blue { --primary-color: #3b82f6; --primary-light: #dbeafe; }
+        .theme-green { --primary-color: #10b981; --primary-light: #d1fae5; }
+        .theme-purple { --primary-color: #8b5cf6; --primary-light: #e9d5ff; }
+        .theme-orange { --primary-color: #f59e0b; --primary-light: #fef3c7; }
+
+        /* Header */
+        .modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          padding: 24px 32px;
+          border-bottom: 1px solid #e5e7eb;
+          background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+          color: white;
+          border-radius: 16px 16px 0 0;
+        }
+
+        .header-content h2 {
+          margin: 0 0 8px 0;
+          font-size: 24px;
+          font-weight: 700;
+        }
+
+        .modal-subtitle {
+          margin: 0;
+          font-size: 14px;
+          opacity: 0.9;
+        }
+
+        .close-btn {
+          background: rgba(255, 255, 255, 0.2);
+          border: none;
+          border-radius: 8px;
+          padding: 8px;
+          cursor: pointer;
+          color: white;
+          transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+          background: rgba(255, 255, 255, 0.3);
+          transform: scale(1.05);
+        }
+
+        /* Content */
+        .modal-content {
+          padding: 32px;
+          position: relative;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(255, 255, 255, 0.9);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          z-index: 10;
+          border-radius: 0 0 16px 16px;
+        }
+
+        .loading-spinner {
+          width: 40px;
+          height: 40px;
+          border: 4px solid #e5e7eb;
+          border-top: 4px solid var(--primary-color);
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        /* Form */
+        .beautiful-form {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+
+        .form-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 24px;
+        }
+
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .form-group.full-width {
+          grid-column: 1 / -1;
+        }
+
+        .form-label {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-weight: 600;
+          color: #374151;
+          font-size: 14px;
+        }
+
+        .label-icon {
+          font-size: 16px;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+          padding: 12px 16px;
+          border: 2px solid #e5e7eb;
+          border-radius: 8px;
+          font-size: 14px;
+          transition: all 0.2s;
+          background: #ffffff;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+          outline: none;
+          border-color: var(--primary-color);
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-input.error,
+        .form-select.error {
+          border-color: #ef4444;
+        }
+
+        .form-textarea {
+          resize: vertical;
+          min-height: 100px;
+        }
+
+        .error-message {
+          color: #ef4444;
+          font-size: 12px;
+          margin-top: 4px;
+        }
+
+        .char-count {
+          text-align: right;
+          font-size: 12px;
+          color: #6b7280;
+          margin-top: 4px;
+        }
+
+        /* Radio Buttons */
+        .radio-group {
+          display: flex;
+          gap: 16px;
+          flex-wrap: wrap;
+        }
+
+        .radio-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+        }
+
+        .radio-input {
+          display: none;
+        }
+
+        .radio-custom {
+          width: 18px;
+          height: 18px;
+          border: 2px solid #d1d5db;
+          border-radius: 50%;
+          position: relative;
+          transition: all 0.2s;
+        }
+
+        .radio-input:checked + .radio-custom {
+          border-color: var(--color);
+          background: var(--color);
+        }
+
+        .radio-input:checked + .radio-custom::after {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 6px;
+          height: 6px;
+          background: white;
+          border-radius: 50%;
+        }
+
+        .radio-label {
+          font-size: 14px;
+          color: #374151;
+        }
+
+        /* Checkboxes */
+        .checkbox-group {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .checkbox-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+        }
+
+        .checkbox-input {
+          display: none;
+        }
+
+        .checkbox-custom {
+          width: 18px;
+          height: 18px;
+          border: 2px solid #d1d5db;
+          border-radius: 4px;
+          position: relative;
+          transition: all 0.2s;
+        }
+
+        .checkbox-input:checked + .checkbox-custom {
+          background: var(--primary-color);
+          border-color: var(--primary-color);
+        }
+
+        .checkbox-input:checked + .checkbox-custom::after {
+          content: '✓';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          color: white;
+          font-size: 12px;
+          font-weight: bold;
+        }
+
+        .checkbox-label {
+          font-size: 14px;
+          color: #374151;
+        }
+
+        /* Tags */
+        .tags-container {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+
+        .tag-item {
+          padding: 6px 12px;
+          background: #f3f4f6;
+          border: 1px solid #d1d5db;
+          border-radius: 20px;
+          font-size: 12px;
+          cursor: pointer;
+          transition: all 0.2s;
+          color: #374151;
+        }
+
+        .tag-item:hover {
+          background: #e5e7eb;
+        }
+
+        .tag-item.selected {
+          background: var(--primary-color);
+          color: white;
+          border-color: var(--primary-color);
+        }
+
+        /* Form Actions */
+        .form-actions {
+          display: flex;
+          gap: 16px;
+          justify-content: flex-end;
+          padding-top: 24px;
+          border-top: 1px solid #e5e7eb;
+        }
+
+        .submit-btn,
+        .cancel-btn {
+          padding: 12px 24px;
+          border: none;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .submit-btn {
+          background: var(--primary-color);
+          color: white;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .submit-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .cancel-btn {
+          background: #f3f4f6;
+          color: #374151;
+        }
+
+        .cancel-btn:hover {
+          background: #e5e7eb;
+        }
+
+        .loading-spinner-small {
+          width: 16px;
+          height: 16px;
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-top: 2px solid white;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+          .beautiful-form-modal {
+            margin: 16px;
+            max-height: calc(100vh - 32px);
+          }
+
+          .modal-header {
+            padding: 20px 24px;
+          }
+
+          .modal-content {
+            padding: 24px;
+          }
+
+          .form-row {
+            grid-template-columns: 1fr;
+            gap: 16px;
+          }
+
+          .radio-group {
+            flex-direction: column;
+            gap: 12px;
+          }
+
+          .form-actions {
+            flex-direction: column;
+          }
+
+          .submit-btn,
+          .cancel-btn {
+            width: 100%;
+            justify-content: center;
+          }
+        }
+      </style>
     </div>
   `
 };
